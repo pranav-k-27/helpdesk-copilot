@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GenAI Helpdesk Copilot – Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1a1f2e, #2d3748); padding: 28px 40px; border-bottom: 1px solid #2d3748; }
+  header h1 { font-size: 1.6rem; font-weight: 700; color: #63b3ed; }
+  header p { color: #a0aec0; font-size: 0.9rem; margin-top: 4px; }
+
+  .container { padding: 30px 40px; }
+
+  .arch-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+
+  .layer { border-radius: 12px; padding: 20px; position: relative; }
+  .layer-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
+  .layer-ui    { background: #1a2744; border: 1px solid #3b82f6; }
+  .layer-orch  { background: #1a2a1a; border: 1px solid #48bb78; }
+  .layer-rag   { background: #2a1a2a; border: 1px solid #a855f7; }
+  .layer-sql   { background: #2a2210; border: 1px solid #f59e0b; }
+  .layer-llm   { background: #1a2535; border: 1px solid #0ea5e9; }
+  .layer-guard { background: #2a1a1a; border: 1px solid #f87171; }
+  .layer-obs   { background: #1a2530; border: 1px solid #38bdf8; }
+  .layer-data  { background: #1a2520; border: 1px solid #4ade80; }
+
+  .layer-ui    .layer-title { color: #3b82f6; }
+  .layer-orch  .layer-title { color: #48bb78; }
+  .layer-rag   .layer-title { color: #a855f7; }
+  .layer-sql   .layer-title { color: #f59e0b; }
+  .layer-llm   .layer-title { color: #0ea5e9; }
+  .layer-guard .layer-title { color: #f87171; }
+  .layer-obs   .layer-title { color: #38bdf8; }
+  .layer-data  .layer-title { color: #4ade80; }
+
+  .component { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 0.82rem; }
+  .component strong { display: block; font-size: 0.85rem; margin-bottom: 2px; }
+  .component span { color: #94a3b8; font-size: 0.78rem; }
+
+  .flow-section { margin-bottom: 30px; }
+  .flow-section h2 { font-size: 1rem; color: #63b3ed; margin-bottom: 16px; font-weight: 600; }
+
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .flow-step { background: #1e2a3a; border: 1px solid #2d4a6e; border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; white-space: nowrap; }
+  .flow-step.highlight { background: #1e3a2a; border-color: #2d6e4a; }
+  .arrow { color: #4a5568; font-size: 1rem; }
+
+  .dual-pipeline { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+  .pipeline { border-radius: 12px; padding: 20px; }
+  .pipeline-rag { background: #1f1530; border: 1px solid #a855f7; }
+  .pipeline-sql { background: #1f1a0f; border: 1px solid #f59e0b; }
+  .pipeline h3 { font-size: 0.85rem; font-weight: 700; margin-bottom: 14px; letter-spacing: 0.5px; }
+  .pipeline-rag h3 { color: #a855f7; }
+  .pipeline-sql h3 { color: #f59e0b; }
+  .pipeline-step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .step-num { background: rgba(255,255,255,0.1); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+  .step-text { font-size: 0.8rem; }
+  .step-text span { color: #94a3b8; display: block; font-size: 0.74rem; }
+
+  .tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 30px; }
+  .tech-card { background: #1a2035; border: 1px solid #2d3748; border-radius: 10px; padding: 14px; }
+  .tech-card h4 { font-size: 0.72rem; color: #63b3ed; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .tech-card ul { list-style: none; }
+  .tech-card li { font-size: 0.78rem; color: #cbd5e0; padding: 3px 0; border-bottom: 1px solid #2d3748; }
+  .tech-card li:last-child { border-bottom: none; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+  .badge-new { background: #1a3a2a; color: #4ade80; border: 1px solid #4ade80; }
+  .badge-key { background: #1a2a3a; color: #63b3ed; border: 1px solid #63b3ed; }
+
+  .section-divider { border: none; border-top: 1px solid #2d3748; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🤖 GenAI Helpdesk Copilot — Solution Architecture</h1>
+  <p>Enterprise-grade · Dual-Pipeline RAG · Governed · Secure · Containerized</p>
+</header>
+
+<div class="container">
+
+  <!-- COMPONENT LAYERS -->
+  <div class="arch-grid">
+
+    <div class="layer layer-ui">
+      <div class="layer-title">🖥 User Interface / API</div>
+      <div class="component"><strong>Web Chat UI</strong><span>React-based conversational interface with citation display</span></div>
+      <div class="component"><strong>REST API</strong><span>FastAPI — /query, /insights, /audit endpoints</span></div>
+      <div class="component"><strong>Auth (JWT + RBAC)</strong><span>Admin / Agent / Viewer roles</span></div>
+    </div>
+
+    <div class="layer layer-orch">
+      <div class="layer-title">🧠 Query Orchestrator</div>
+      <div class="component"><strong>Intent Classifier</strong><span>How-to → RAG Pipeline | Analytics → SQL Pipeline</span></div>
+      <div class="component"><strong>Session Manager</strong><span>Maintains multi-turn conversation context</span></div>
+      <div class="component"><strong>Response Assembler</strong><span>Merges answer + citations + confidence score</span></div>
+    </div>
+
+    <div class="layer layer-guard">
+      <div class="layer-title">🛡 Guardrails Layer</div>
+      <div class="component"><strong>Prompt Injection Detector</strong><span>Rule-based pattern matching</span></div>
+      <div class="component"><strong>PII Redactor</strong><span>Regex — masks emails, phones, names</span></div>
+      <div class="component"><strong>Rate Limiter</strong><span>Per-user token and request limits</span></div>
+      <div class="component"><strong>Output Validator</strong><span>Confidence threshold + fallback trigger</span></div>
+    </div>
+
+    <div class="layer layer-rag">
+      <div class="layer-title">📚 RAG Pipeline <span class="badge badge-key">How-to Queries</span></div>
+      <div class="component"><strong>Hybrid Retriever</strong><span>Dense (vector) + Sparse (BM25) search</span></div>
+      <div class="component"><strong>Cross-Encoder Reranker</strong><span>Top-10 → Top-3 precision filter</span></div>
+      <div class="component"><strong>Context Grounder</strong><span>"Answer from context only" enforcement</span></div>
+      <div class="component"><strong>Citation Generator</strong><span>Source doc + chunk reference per answer</span></div>
+    </div>
+
+    <div class="layer layer-sql">
+      <div class="layer-title">📊 NLQ→SQL Pipeline <span class="badge badge-new">Analytics</span></div>
+      <div class="component"><strong>Schema Embedder</strong><span>Table/column metadata in vector store</span></div>
+      <div class="component"><strong>SQL Generator</strong><span>LLM generates SQL from NLQ + schema context</span></div>
+      <div class="component"><strong>Query Executor</strong><span>Safe parameterised execution on ticket DB</span></div>
+      <div class="component"><strong>Insight Summariser</strong><span>LLM narrates query results in plain English</span></div>
+    </div>
+
+    <div class="layer layer-llm">
+      <div class="layer-title">🤖 LLM Layer</div>
+      <div class="component"><strong>OpenAI GPT-4o / Claude</strong><span>Vendor-agnostic via abstraction layer</span></div>
+      <div class="component"><strong>Prompt Templates</strong><span>Separate templates per intent type</span></div>
+      <div class="component"><strong>Graceful Fallback</strong><span>"Insufficient information in KB" response</span></div>
+    </div>
+
+    <div class="layer layer-data">
+      <div class="layer-title">🗄 Data Layer</div>
+      <div class="component"><strong>Vector Store (ChromaDB)</strong><span>KB articles, SOPs, policies — embedded chunks</span></div>
+      <div class="component"><strong>Ticket DB (SQLite/PostgreSQL)</strong><span>Structured ticket data for analytics</span></div>
+      <div class="component"><strong>Document Ingestion Pipeline</strong><span>Chunking, metadata tagging, embedding</span></div>
+    </div>
+
+    <div class="layer layer-obs">
+      <div class="layer-title">📡 Observability & Governance</div>
+      <div class="component"><strong>Prompt + Response Logger</strong><span>Full query lifecycle in JSON</span></div>
+      <div class="component"><strong>Retrieval Tracer</strong><span>Docs retrieved per query logged</span></div>
+      <div class="component"><strong>Token & Latency Monitor</strong><span>Per-request cost tracking</span></div>
+      <div class="component"><strong>Audit Log</strong><span>User attribution for every answer</span></div>
+    </div>
+
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- DUAL PIPELINE DETAIL -->
+  <div class="flow-section">
+    <h2>Dual-Pipeline Request Flow</h2>
+  </div>
+
+  <div class="dual-pipeline">
+    <div class="pipeline pipeline-rag">
+      <h3>📚 RAG Pipeline — "How-to / Policy" Queries</h3>
+      <div class="pipeline-step"><div class="step-num">1</div><div class="step-text">NLQ received & classified as How-to<span>e.g. "How do I reset a user's VPN access?"</span></div></div>
+      <div class="pipeline-step"><div class="step-num">2</div><div class="step-text">Guardrails check (PII, injection)<span>Clean query passed forward</span></div></div>
+      <div class="pipeline-step"><div class="step-num">3</div><div class="step-text">Hybrid retrieval — Top-10 chunks<span>Dense vector search + BM25 keyword search merged</span></div></div>
+      <div class="pipeline-step"><div class="step-num">4</div><div class="step-text">Cross-encoder reranker → Top-3<span>Best chunks selected by relevance score</span></div></div>
+      <div class="pipeline-step"><div class="step-num">5</div><div class="step-text">LLM generates answer from context only<span>Citations included. If confidence low → fallback</span></div></div>
+      <div class="pipeline-step"><div class="step-num">6</div><div class="step-text">Response logged to observability layer<span>Full trace: query → docs → answer → tokens</span></div></div>
+    </div>
+
+    <div class="pipeline pipeline-sql">
+      <h3>📊 NLQ→SQL Pipeline — "Analytics / Insight" Queries</h3>
+      <div class="pipeline-step"><div class="step-num">1</div><div class="step-text">NLQ received & classified as Analytics<span>e.g. "Which ticket categories breach SLA most?"</span></div></div>
+      <div class="pipeline-step"><div class="step-num">2</div><div class="step-text">Schema context retrieved from vector store<span>Relevant table/column metadata injected into prompt</span></div></div>
+      <div class="pipeline-step"><div class="step-num">3</div><div class="step-text">LLM generates SQL query<span>Safe, parameterised query with validation</span></div></div>
+      <div class="pipeline-step"><div class="step-num">4</div><div class="step-text">SQL executed on ticket database<span>Returns structured result set</span></div></div>
+      <div class="pipeline-step"><div class="step-num">5</div><div class="step-text">LLM narrates results in plain English<span>With trend highlights and SLA risk flags</span></div></div>
+      <div class="pipeline-step"><div class="step-num">6</div><div class="step-text">Response logged to observability layer<span>SQL, results, and narration all audited</span></div></div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- TECH STACK -->
+  <div class="flow-section">
+    <h2>Technology Stack</h2>
+  </div>
+
+  <div class="tech-grid">
+    <div class="tech-card">
+      <h4>Backend</h4>
+      <ul>
+        <li>FastAPI (Python)</li>
+        <li>LangChain</li>
+        <li>Sentence Transformers</li>
+        <li>SQLAlchemy</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <h4>AI / LLM</h4>
+      <ul>
+        <li>OpenAI GPT-4o</li>
+        <li>text-embedding-3-small</li>
+        <li>cross-encoder reranker</li>
+        <li>BM25 (rank_bm25)</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <h4>Data / Storage</h4>
+      <ul>
+        <li>ChromaDB (vector)</li>
+        <li>SQLite / PostgreSQL</li>
+        <li>JSON audit logs</li>
+        <li>Faker (synthetic data)</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <h4>Frontend</h4>
+      <ul>
+        <li>React + Tailwind</li>
+        <li>Streaming responses</li>
+        <li>Citation cards UI</li>
+        <li>Insight charts</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <h4>Security</h4>
+      <ul>
+        <li>JWT Auth</li>
+        <li>RBAC middleware</li>
+        <li>PII redaction</li>
+        <li>Injection detection</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <h4>Observability</h4>
+      <ul>
+        <li>Langfuse (OSS)</li>
+        <li>Structured JSON logs</li>
+        <li>Token cost tracker</li>
+        <li>Latency per component</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <h4>Infrastructure</h4>
+      <ul>
+        <li>Docker Compose</li>
+        <li>Nginx reverse proxy</li>
+        <li>Cloud-agnostic</li>
+        <li>CI/CD ready</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <h4>Testing</h4>
+      <ul>
+        <li>pytest (unit + integration)</li>
+        <li>RAG vs No-RAG comparison</li>
+        <li>Hallucination test suite</li>
+        <li>Validation report generator</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

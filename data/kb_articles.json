@@ -1,0 +1,38 @@
+[
+  {
+    "id": "KB-001",
+    "title": "VPN Troubleshooting Guide",
+    "doc_type": "how_to",
+    "content": "VPN Troubleshooting Guide\n\nCommon Issues and Resolutions:\n\n1. Cannot Connect to VPN\n   - Ensure you have a stable internet connection before connecting.\n   - Check that the VPN client (Cisco AnyConnect / GlobalProtect) is up to date.\n   - Try disconnecting from other VPNs or proxy services.\n   - If using MFA, ensure your authenticator app time is synced.\n   - Restart the VPN service: Services > Cisco AnyConnect > Restart.\n\n2. VPN Keeps Disconnecting\n   - Check network stability \u2014 VPN drops often indicate underlying network issues.\n   - Set the session timeout in VPN client settings to 8 hours.\n   - Disable sleep mode on laptop during VPN sessions.\n   - Contact your network team if issue persists beyond 3 reconnect attempts.\n\n3. VPN Authentication Failed\n   - Reset your Active Directory password via https://password.internal.com\n   - Ensure your account has VPN access rights \u2014 check with IT Security.\n   - Clear VPN client cache: Settings > Advanced > Clear Cache.\n\nSLA: VPN issues are classified P2-High. Target resolution: 8 hours.\nEscalation: If unresolved in 4 hours, escalate to Network Operations team.\n"
+  },
+  {
+    "id": "KB-002",
+    "title": "Password Reset Procedure",
+    "doc_type": "policy",
+    "content": "Password Reset Procedure and Policy\n\nSelf-Service Reset:\nUsers can reset their own password via the self-service portal at https://password.internal.com.\nRequirements: Must have registered recovery email or phone number.\n\nHelpdesk-Assisted Reset:\n1. Verify user identity using employee ID + date of birth.\n2. Log the request in the ticketing system with reason code: PASS_RESET.\n3. Generate temporary password (8+ chars, mixed case, number, special char).\n4. Set \"Must change on next login\" flag.\n5. Notify user via alternate contact channel.\n\nPassword Policy:\n- Minimum length: 12 characters\n- Must include: uppercase, lowercase, number, special character\n- Cannot reuse last 10 passwords\n- Expires every 90 days\n- Lockout threshold: 5 failed attempts \u2192 auto-lock for 15 minutes\n\nSLA: Account access issues are P2-High. Resolution within 8 hours.\n"
+  },
+  {
+    "id": "KB-003",
+    "title": "SLA Policy and Escalation Matrix",
+    "doc_type": "policy",
+    "content": "Service Level Agreement (SLA) Policy\n\nPriority Definitions and Target Resolution Times:\n\nP1 - Critical: System down, major business impact. Target: 4 hours. Immediate escalation to on-call engineer.\nP2 - High: Significant functionality impaired. Target: 8 hours. Escalate if unresolved in 4 hours.\nP3 - Medium: Minor functionality issues, workaround available. Target: 24 hours.\nP4 - Low: Cosmetic issues, general queries. Target: 72 hours.\n\nEscalation Procedure:\n1. At 50% of SLA time: Agent must update ticket with progress note.\n2. At 75% of SLA time: Supervisor automatically notified.\n3. At 100% of SLA time: Ticket marked SLA_BREACH. Manager alerted.\n4. Beyond SLA: Executive report generated daily for all breached tickets.\n\nCustomer Communication:\n- All tickets must receive initial acknowledgment within 1 hour.\n- Status updates every 4 hours for P1, every 8 hours for P2.\n- Resolution notification sent within 30 minutes of closure.\n"
+  },
+  {
+    "id": "KB-004",
+    "title": "Email and Outlook Troubleshooting",
+    "doc_type": "how_to",
+    "content": "Email and Outlook Troubleshooting Guide\n\n1. Outlook Not Syncing / Emails Not Arriving\n   - Check internet connection and Outlook status bar (should show \"Connected to Microsoft Exchange\").\n   - Send/Receive All: Press F9 or go to Send/Receive > Send/Receive All Folders.\n   - Clear Outlook cache: File > Account Settings > Data Files > Open File Location > delete .ost file.\n   - Restart Outlook in safe mode: Hold Ctrl while opening Outlook.\n\n2. Cannot Send Attachments\n   - Check attachment size limit: maximum 25MB per email (internal), 10MB (external).\n   - Use SharePoint or OneDrive for large files \u2014 share the link instead.\n   - Check if the recipient domain is on the blocked list (contact IT Security).\n\n3. Missing Emails\n   - Check Junk / Spam folder \u2014 emails may be misclassified.\n   - Check retention policy: emails older than 3 years may be archived.\n   - Search in Outlook All Items: Ctrl+Alt+A to search all folders.\n   - Contact IT if email appears to be permanently lost \u2014 recovery possible up to 30 days.\n"
+  },
+  {
+    "id": "KB-005",
+    "title": "Hardware Issue Handling Procedure",
+    "doc_type": "policy",
+    "content": "Hardware Issue Escalation and Replacement Policy\n\nLaptop and Desktop Issues:\n- Software fix attempted first (driver reinstall, OS repair).\n- If hardware fault confirmed: issue loaner device within 4 hours for P1/P2.\n- Send device to hardware team for repair or replacement within 1 business day.\n\nScreen / Display Issues:\n- Check cable connections and display settings before logging hardware fault.\n- If screen flickering persists after driver update: escalate to hardware team.\n\nReplacement Policy:\n- Devices under 3 years: repaired under warranty.\n- Devices 3+ years: replacement evaluated against asset lifecycle policy.\n- Approval needed from IT Manager for replacements over $500.\n\nLoaner Device Process:\n1. Log ticket with category: Hardware, attach photo of issue if possible.\n2. Agent picks up loaner from IT asset room (Cabinet B, Floor 3).\n3. Log loaner serial number against employee ID in asset tracker.\n4. Return timeline: 5 business days unless device is in repair > 5 days.\n"
+  },
+  {
+    "id": "KB-006",
+    "title": "Account Lockout Resolution Guide",
+    "doc_type": "how_to",
+    "content": "Account Lockout Resolution Guide\n\nAccounts are automatically locked after 5 failed login attempts.\n\nSelf-Service Unlock:\n- Wait 15 minutes \u2014 accounts auto-unlock after the lockout period.\n- Use the self-service portal: https://password.internal.com to unlock immediately.\n\nHelpdesk-Assisted Unlock:\n1. Verify user identity using employee ID.\n2. In Active Directory, go to user account properties.\n3. Uncheck 'Account is locked out' checkbox.\n4. Ask user to reset password immediately after unlock.\n5. Log ticket with reason code: ACCT_UNLOCK.\n\nCommon Causes:\n- Cached credentials on old device still trying to authenticate.\n- Mobile device syncing with old password.\n- Shared account being used by multiple people.\n\nPrevention: Enable MFA to reduce lockout risk.\nSLA: Account access issues are P2-High, resolved within 8 hours.\n"
+  }
+]
