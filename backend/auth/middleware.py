@@ -6,6 +6,8 @@ Roles:
   agent  — can query + stats
   viewer — read-only (stats only)
 """
+import hashlib
+import hmac
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -25,23 +27,37 @@ ROLE_PERMISSIONS = {
     "viewer": ["stats"],
 }
 
-# ── Demo users — plain text passwords for demo/competition use ────────────────
-# In production: replace with DB lookup + proper hashing
+
+def _hash_password(password: str) -> str:
+    """Hash password using SHA-256 with salt."""
+    salt = "helpdesk-copilot-salt"
+    return hashlib.sha256(f"{salt}{password}".encode()).hexdigest()
+
+
+def _verify_password(plain: str, hashed: str) -> bool:
+    """Constant-time comparison to prevent timing attacks."""
+    return hmac.compare_digest(
+        _hash_password(plain).encode(),
+        hashed.encode()
+    )
+
+
+# ── Demo users with hashed passwords ──────────────────────────────────────────
 DEMO_USERS = {
     "admin": {
-        "username": "admin",
-        "password": "admin123",
-        "role":     "admin",
+        "username":        "admin",
+        "hashed_password": _hash_password("admin123"),
+        "role":            "admin",
     },
     "agent001": {
-        "username": "agent001",
-        "password": "agent123",
-        "role":     "agent",
+        "username":        "agent001",
+        "hashed_password": _hash_password("agent123"),
+        "role":            "agent",
     },
     "viewer": {
-        "username": "viewer",
-        "password": "viewer123",
-        "role":     "viewer",
+        "username":        "viewer",
+        "hashed_password": _hash_password("viewer123"),
+        "role":            "viewer",
     },
 }
 
@@ -66,11 +82,11 @@ class LoginRequest(BaseModel):
 
 # ── Auth utilities ─────────────────────────────────────────────────────────────
 def authenticate_user(username: str, password: str) -> Optional[dict]:
-    """Verify username + password. Returns user dict or None."""
+    """Verify username + hashed password."""
     user = DEMO_USERS.get(username)
     if not user:
         return None
-    if user["password"] != password:
+    if not _verify_password(password, user["hashed_password"]):
         return None
     return user
 
@@ -111,10 +127,10 @@ def verify_token(token: str) -> TokenData:
         if not username:
             raise HTTPException(status_code=401, detail="Invalid token payload")
         return TokenData(username=username, role=role)
-    except JWTError as e:
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token validation failed: {str(e)}",
+            detail="Token validation failed",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -134,16 +150,13 @@ def get_current_user(
 
 
 def require_permission(permission: str):
-    """
-    RBAC dependency factory.
-    Usage: Depends(require_permission("audit"))
-    """
+    """RBAC dependency factory."""
     def _check(current_user: TokenData = Depends(get_current_user)) -> TokenData:
         allowed = ROLE_PERMISSIONS.get(current_user.role, [])
         if permission not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Role '{current_user.role}' does not have '{permission}' permission",
+                detail="Insufficient permissions",
             )
         return current_user
     return _check
